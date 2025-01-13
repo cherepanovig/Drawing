@@ -8,7 +8,7 @@ class DrawingApp:
     Приложение для рисования с возможностью сохранения в формате PNG.
 
     Позволяет пользователю рисовать на холсте, выбирать цвет и размер кисти,
-    очищать холст и сохранять рисунок в файл.
+    очищать холст, использовать ластик и сохранять рисунок в файл.
 
     Атрибуты:
         root (tk.Tk): Главное окно приложения.
@@ -22,6 +22,11 @@ class DrawingApp:
         brush_size_scale (tk.Scale): Шкала для выбора размера кисти.
         selected_size (tk.StringVar): Переменная Tkinter, хранящая текущий размер кисти (строковое представление).
         brush_size_menu (tk.OptionMenu): Выпадающий список для выбора размера кисти.
+        eraser_mode (bool): Флаг, указывающий, активен ли режим ластика.
+        previous_color (str): Предыдущий цвет кисти (до активации ластика).
+        mode_label (tk.Label): Метка, отображающая текущий режим (Кисть/Ластик).
+        eraser_button (tk.Button): Кнопка включения/выключения ластика.
+        eraser_indicator (tk.Canvas):  Круглый индикатор состояния ластика.
     """
 
     def __init__(self, root):
@@ -40,8 +45,10 @@ class DrawingApp:
 
         self.setup_ui()  # Настраиваем пользовательский интерфейс
 
-        self.last_x, self.last_y = None, None  # Инициализируем координаты предыдущей точки (None, None в начале рисования)
+        self.last_x, self.last_y = None, None  # Инициал-ем координаты предыдущей точки (None, None в начале рисования)
         self.pen_color = 'black'  # Инициализируем цвет пера (по умолчанию черный)
+        self.eraser_mode = False  # Инициализируем флаг режима ластика (по умолчанию выключен)
+        self.previous_color = self.pen_color  # Инициализируем предыдущий цвет
 
         self.canvas.bind('<B1-Motion>', self.paint)  # Привязываем событие движения мыши с зажатой левой кнопкой к
         # методу paint
@@ -67,10 +74,28 @@ class DrawingApp:
         save_button = tk.Button(control_frame, text="Сохранить", command=self.save_image)  # Создаем кнопку "Сохранить"
         save_button.pack(side=tk.LEFT, padx=5, pady=5)  # Размещаем кнопку слева с отступами
 
+        # Рамка для кнопки "Ластик", индикатора и метки отображения режима
+        # eraser_frame = tk.Frame(control_frame)
+        eraser_frame = tk.LabelFrame(control_frame, text="Выбор режима", height=50)
+        eraser_frame.pack(side=tk.LEFT, padx=5, pady=5, fill=tk.Y)  # Размещаем рамку слева с отступами и заполнением
+        # по вертикали
+
+        # Добавляем кнопку "Ластик"
+        self.eraser_button = tk.Button(eraser_frame, text="Ластик", command=self.toggle_eraser)
+        self.eraser_button.pack(side=tk.LEFT, padx=5, pady=5)
+
+        # Добавляем индикатор состояния ластика
+        self.eraser_indicator = tk.Canvas(eraser_frame, width=10, height=10,
+                                          highlightthickness=0)  # Убираем фон
+        self.eraser_indicator.pack(side=tk.LEFT, padx=2)
+        self.eraser_indicator.create_oval(2, 2, 8, 8, fill='gray', outline='gray',
+                                          tags="indicator")  # Серый кружок по умолчанию
+
         # Рамка для выбора размера кисти
         brush_size_frame = tk.LabelFrame(control_frame,
-                                         text="Выбор размера кисти")  # Создаем LabelFrame (рамка с заголовком)
-        brush_size_frame.pack(side=tk.LEFT, padx=5, pady=5)  # Размещаем рамку слева с отступами
+                                         text="Выбор размера кисти", height=50)  # СоздаемLabelFrame(рамка с заголовком)
+        brush_size_frame.pack(side=tk.LEFT, padx=5, pady=5, fill=tk.Y)  # Размещаем рамку слева с отступами и
+        # заполнением по вертикали
 
         self.brush_size_var = tk.IntVar(value=5)  # Создаем переменную Tkinter для хранения размера кисти
         # (начальное значение 5)
@@ -89,6 +114,12 @@ class DrawingApp:
                                              command=self.update_scale_from_menu)
         self.brush_size_menu.config(width=3)  # Устанавливаем ширину выпадающего списка
         self.brush_size_menu.pack(side=tk.LEFT, padx=5, pady=5)  # Размещаем меню внутри рамки
+
+        # Добавляем метку для отображения текущего режима
+        # self.mode_label = tk.Label(control_frame, text="Режим: Кисть")  # Начальное значение - "Кисть"
+        # self.mode_label.pack(side=tk.LEFT, padx=5, pady=5)
+        self.mode_label = tk.Label(eraser_frame, text="Режим: Кисть")  # Привязываем ее к ластику и индикатору
+        self.mode_label.pack(side=tk.LEFT, padx=5, pady=5)
 
     def update_menu_from_scale(self, value):
         """
@@ -152,6 +183,10 @@ class DrawingApp:
         chosen_color = colorchooser.askcolor(color=self.pen_color)[1]  # Открываем диалог выбора цвета
         if chosen_color:  # Проверяем, был ли выбран цвет
             self.pen_color = chosen_color  # Обновляем цвет кисти
+            self.previous_color = self.pen_color  # Обновляем предыдущий цвет, если не в режиме ластика
+            self.eraser_mode = False  # Выключаем режим ластика
+            self.update_mode_label()  # Обновляем метку режима
+            self.update_eraser_indicator()  # Обновляем индикатор ластика
 
     def save_image(self):
         """
@@ -163,6 +198,37 @@ class DrawingApp:
         if file_path:  # Проверяем, был ли выбран путь к файлу
             self.image.save(file_path)  # Сохраняем изображение
             messagebox.showinfo("Информация", "Изображение успешно сохранено!")  # Показываем сообщение
+
+    def toggle_eraser(self):
+        """
+        Переключает режим ластика.
+        """
+        self.eraser_mode = not self.eraser_mode  # Инвертируем флаг режима ластика
+        if self.eraser_mode:
+            # Если режим ластика включен, сохраняем текущий цвет и устанавливаем цвет ластика (белый)
+            self.previous_color = self.pen_color
+            self.pen_color = "white"
+        else:
+            # Если режим ластика выключен, восстанавливаем предыдущий цвет
+            self.pen_color = self.previous_color
+        self.update_mode_label()  # Обновляем метку
+        self.update_eraser_indicator()  # Обновляем индикатор
+
+    def update_mode_label(self):
+        """
+        Обновляет текст метки режима в зависимости от значения self.eraser_mode.
+        """
+        if self.eraser_mode:
+            self.mode_label.config(text="Режим: Ластик")
+        else:
+            self.mode_label.config(text="Режим: Кисть")
+
+    def update_eraser_indicator(self):
+        """Обновляет цвет индикатора ластика."""
+        if self.eraser_mode:
+            self.eraser_indicator.itemconfig("indicator", fill="green", outline="green")  # Зеленый, если включен
+        else:
+            self.eraser_indicator.itemconfig("indicator", fill="gray", outline="gray")  # Серый, если выключен
 
 
 def main():
