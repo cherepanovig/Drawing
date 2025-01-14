@@ -9,6 +9,7 @@ class DrawingApp:
 
     Позволяет пользователю рисовать на холсте, выбирать цвет и размер кисти,
     очищать холст, использовать ластик и сохранять рисунок в файл.
+    Также добавлена пипетка для выбора цвета с холста.
 
     Атрибуты:
         root (tk.Tk): Главное окно приложения.
@@ -27,6 +28,7 @@ class DrawingApp:
         mode_label (tk.Label): Метка, отображающая текущий режим (Кисть/Ластик).
         eraser_button (tk.Button): Кнопка включения/выключения ластика.
         eraser_indicator (tk.Canvas):  Круглый индикатор состояния ластика.
+        brush_color_indicator (tk.Canvas): Круглый индикатор цвета кисти.
     """
 
     def __init__(self, root):
@@ -37,10 +39,10 @@ class DrawingApp:
         self.root = root
         self.root.title("Рисовалка с сохранением в PNG")
 
-        self.image = Image.new("RGB", (600, 400), "white")  # Создаем новое изображение PIL белого цвета
+        self.image = Image.new("RGB", (630, 400), "white")  # Создаем новое изображение PIL белого цвета
         self.draw = ImageDraw.Draw(self.image)  # Создаем объект ImageDraw для рисования на изображении
 
-        self.canvas = tk.Canvas(root, width=600, height=400, bg='white')  # Создаем холст Tkinter
+        self.canvas = tk.Canvas(root, width=630, height=400, bg='white')  # Создаем холст Tkinter
         self.canvas.pack()  # Размещаем холст в окне
 
         self.setup_ui()  # Настраиваем пользовательский интерфейс
@@ -54,6 +56,7 @@ class DrawingApp:
         # методу paint
         self.canvas.bind('<ButtonRelease-1>', self.reset)  # Привязываем событие отпускания левой кнопки мыши к
         # методу reset
+        self.canvas.bind('<Button-3>', self.pick_color)  # Привязываем правую кнопку мыши к pick_color
 
     def setup_ui(self):
         """
@@ -85,15 +88,14 @@ class DrawingApp:
         self.eraser_button.pack(side=tk.LEFT, padx=5, pady=5)
 
         # Добавляем индикатор состояния ластика
-        self.eraser_indicator = tk.Canvas(eraser_frame, width=10, height=10,
-                                          highlightthickness=0)  # Убираем фон
+        self.eraser_indicator = tk.Canvas(eraser_frame, width=14, height=14, highlightthickness=0)
         self.eraser_indicator.pack(side=tk.LEFT, padx=2)
-        self.eraser_indicator.create_oval(2, 2, 8, 8, fill='gray', outline='gray',
-                                          tags="indicator")  # Серый кружок по умолчанию
+        self.eraser_indicator.create_oval(2, 2, 12, 12, fill='gray', outline='gray', tags="indicator")  # Серый кружок
+        # по умолчанию
 
         # Рамка для выбора размера кисти
-        brush_size_frame = tk.LabelFrame(control_frame,
-                                         text="Выбор размера кисти", height=50)  # СоздаемLabelFrame(рамка с заголовком)
+        brush_size_frame = tk.LabelFrame(control_frame, text="Выбор размера кисти", height=50)  # Создаем LabelFrame
+        # (рамка с заголовком)
         brush_size_frame.pack(side=tk.LEFT, padx=5, pady=5, fill=tk.Y)  # Размещаем рамку слева с отступами и
         # заполнением по вертикали
 
@@ -120,6 +122,12 @@ class DrawingApp:
         # self.mode_label.pack(side=tk.LEFT, padx=5, pady=5)
         self.mode_label = tk.Label(eraser_frame, text="Режим: Кисть")  # Привязываем ее к ластику и индикатору
         self.mode_label.pack(side=tk.LEFT, padx=5, pady=5)
+
+        # Добавляем индикатор выбранного цвета кисти
+        self.brush_color_indicator = tk.Canvas(eraser_frame, width=14, height=14, highlightthickness=0)
+        self.brush_color_indicator.pack(side=tk.LEFT, padx=2)
+        self.brush_color_indicator.create_oval(2, 2, 12, 12, fill='black', outline='black', tags="indicator_brush")
+        # Изначально черный цвет
 
     def update_menu_from_scale(self, value):
         """
@@ -173,7 +181,7 @@ class DrawingApp:
         Очищает холст и создает новое белое изображение.
         """
         self.canvas.delete("all")  # Очищаем холст Tkinter
-        self.image = Image.new("RGB", (600, 400), "white")  # Создаем новое изображение PIL
+        self.image = Image.new("RGB", (630, 400), "white")  # Создаем новое изображение PIL
         self.draw = ImageDraw.Draw(self.image)  # Создаем новый объект ImageDraw для нового изображения
 
     def choose_color(self):
@@ -187,6 +195,7 @@ class DrawingApp:
             self.eraser_mode = False  # Выключаем режим ластика
             self.update_mode_label()  # Обновляем метку режима
             self.update_eraser_indicator()  # Обновляем индикатор ластика
+            self.update_brush_color_indicator()  # Обновляем индикатор цвета кисти
 
     def save_image(self):
         """
@@ -213,6 +222,7 @@ class DrawingApp:
             self.pen_color = self.previous_color
         self.update_mode_label()  # Обновляем метку
         self.update_eraser_indicator()  # Обновляем индикатор
+        self.update_brush_color_indicator()  # Обновляем индикатор цвета кисти
 
     def update_mode_label(self):
         """
@@ -226,9 +236,42 @@ class DrawingApp:
     def update_eraser_indicator(self):
         """Обновляет цвет индикатора ластика."""
         if self.eraser_mode:
-            self.eraser_indicator.itemconfig("indicator", fill="green", outline="green")  # Зеленый, если включен
+            self.eraser_indicator.itemconfig("indicator", fill="white", outline="black")  # Зеленый, если включен
         else:
             self.eraser_indicator.itemconfig("indicator", fill="gray", outline="gray")  # Серый, если выключен
+
+    def pick_color(self, event):
+        """
+        Выбирает цвет пикселя на холсте под курсором мыши (правая кнопка).
+
+        Args:
+            event (tk.Event): Объект события, содержащий координаты щелчка мыши.
+        """
+        x, y = event.x, event.y  # Получаем координаты клика
+        try:
+            # Пытаемся получить цвет пикселя из изображения
+            rgb = self.image.getpixel((x, y))
+            # Преобразуем RGB в шестнадцатеричный формат
+            hex_color = "#{:02x}{:02x}{:02x}".format(*rgb)
+            self.pen_color = hex_color  # Устанавливаем текущий цвет пера
+            self.previous_color = self.pen_color  # Обновляем предыдущий цвет
+            self.eraser_mode = False  # Переключаем режим на "Кисть", если был включен ластик
+            self.update_mode_label()  # обновляем режим
+            self.update_eraser_indicator()  # Обновляем индикатор ластика
+            self.update_brush_color_indicator()  # Обновляем индикатор цвета кисти
+
+        except IndexError:
+            # Обрабатываем случай, когда клик был за пределами изображения
+            messagebox.showwarning("Внимание", "Вы кликнули за пределами холста!")
+
+    def update_brush_color_indicator(self):
+        """Обновляет цвет индикатора цвета кисти."""
+        if self.eraser_mode:
+            # Если ластик включен, устанавливаем цвет индикатора в серый цвет
+            self.brush_color_indicator.itemconfig("indicator_brush", fill='gray', outline='gray')
+        else:
+            # Иначе устанавливаем цвет индикатора в текущий цвет кисти
+            self.brush_color_indicator.itemconfig("indicator_brush", fill=self.pen_color, outline=self.pen_color)
 
 
 def main():
