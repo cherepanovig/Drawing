@@ -129,6 +129,10 @@ class DrawingApp:
         self.brush_color_indicator.create_oval(2, 2, 12, 12, fill='black', outline='black', tags="indicator_brush")
         # Изначально черный цвет
 
+        # Добавляем горячие клавиши
+        self.root.bind('<Control-s>', self.save_image)  # Привязка Ctrl+s к функции сохранения изображения
+        self.root.bind('<Control-c>', self.choose_color)  # Привязка Ctrl+c к функции выбора цвета
+
     def update_menu_from_scale(self, value):
         """
         Обновляет значение в выпадающем списке при изменении значения шкалы.
@@ -184,9 +188,10 @@ class DrawingApp:
         self.image = Image.new("RGB", (630, 400), "white")  # Создаем новое изображение PIL
         self.draw = ImageDraw.Draw(self.image)  # Создаем новый объект ImageDraw для нового изображения
 
-    def choose_color(self):
+    def choose_color(self, event=None):  # event=None для возможности вызова функции горячей клавишей
         """
         Открывает диалог выбора цвета и обновляет текущий цвет кисти.
+        Функция принимает аргумент event, хотя явно его не использует, для совместимости с bind.
         """
         chosen_color = colorchooser.askcolor(color=self.pen_color)[1]  # Открываем диалог выбора цвета
         if chosen_color:  # Проверяем, был ли выбран цвет
@@ -197,9 +202,10 @@ class DrawingApp:
             self.update_eraser_indicator()  # Обновляем индикатор ластика
             self.update_brush_color_indicator()  # Обновляем индикатор цвета кисти
 
-    def save_image(self):
+    def save_image(self, event=None):  # event=None для возможности вызова функции горячей клавишей
         """
         Открывает диалог сохранения файла и сохраняет изображение в формате PNG.
+        Функция принимает аргумент event, хотя явно его не использует, для совместимости с bind.
         """
         file_path = filedialog.asksaveasfilename(defaultextension='.png',  # Задаем расширение по умолчанию
                                                  filetypes=[('PNG files', '*.png')],  # Указываем типы файлов
@@ -236,7 +242,7 @@ class DrawingApp:
     def update_eraser_indicator(self):
         """Обновляет цвет индикатора ластика."""
         if self.eraser_mode:
-            self.eraser_indicator.itemconfig("indicator", fill="white", outline="black")  # Зеленый, если включен
+            self.eraser_indicator.itemconfig("indicator", fill="white", outline="black")  # Белый, если включен
         else:
             self.eraser_indicator.itemconfig("indicator", fill="gray", outline="gray")  # Серый, если выключен
 
