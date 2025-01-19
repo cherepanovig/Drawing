@@ -29,6 +29,7 @@ class DrawingApp:
         eraser_button (tk.Button): Кнопка включения/выключения ластика.
         eraser_indicator (tk.Canvas):  Круглый индикатор состояния ластика.
         brush_color_indicator (tk.Canvas): Круглый индикатор цвета кисти.
+        mode_label_fg (str): Цвет текста метки режима (соответствует цвету кисти).
     """
 
     def __init__(self, root):
@@ -51,6 +52,8 @@ class DrawingApp:
         self.pen_color = 'black'  # Инициализируем цвет пера (по умолчанию черный)
         self.eraser_mode = False  # Инициализируем флаг режима ластика (по умолчанию выключен)
         self.previous_color = self.pen_color  # Инициализируем предыдущий цвет
+        self.mode_label_fg = "black"  # Инициализация цвета текста метки режима
+        self.update_mode_label_color()  # Обновляем цвет текста метки режима
 
         self.canvas.bind('<B1-Motion>', self.paint)  # Привязываем событие движения мыши с зажатой левой кнопкой к
         # методу paint
@@ -118,8 +121,6 @@ class DrawingApp:
         self.brush_size_menu.pack(side=tk.LEFT, padx=5, pady=5)  # Размещаем меню внутри рамки
 
         # Добавляем метку для отображения текущего режима
-        # self.mode_label = tk.Label(control_frame, text="Режим: Кисть")  # Начальное значение - "Кисть"
-        # self.mode_label.pack(side=tk.LEFT, padx=5, pady=5)
         self.mode_label = tk.Label(eraser_frame, text="Режим: Кисть")  # Привязываем ее к ластику и индикатору
         self.mode_label.pack(side=tk.LEFT, padx=5, pady=5)
 
@@ -201,6 +202,7 @@ class DrawingApp:
             self.update_mode_label()  # Обновляем метку режима
             self.update_eraser_indicator()  # Обновляем индикатор ластика
             self.update_brush_color_indicator()  # Обновляем индикатор цвета кисти
+            self.update_mode_label_color()  # Обновляем цвет текста метки режима
 
     def save_image(self, event=None):  # event=None для возможности вызова функции горячей клавишей
         """
@@ -229,6 +231,7 @@ class DrawingApp:
         self.update_mode_label()  # Обновляем метку
         self.update_eraser_indicator()  # Обновляем индикатор
         self.update_brush_color_indicator()  # Обновляем индикатор цвета кисти
+        self.update_mode_label_color()  # Обновляем цвета текста метки
 
     def update_mode_label(self):
         """
@@ -265,7 +268,7 @@ class DrawingApp:
             self.update_mode_label()  # обновляем режим
             self.update_eraser_indicator()  # Обновляем индикатор ластика
             self.update_brush_color_indicator()  # Обновляем индикатор цвета кисти
-
+            self.update_mode_label_color()  # Обновляем цвета текста метки
         except IndexError:
             # Обрабатываем случай, когда клик был за пределами изображения
             messagebox.showwarning("Внимание", "Вы кликнули за пределами холста!")
@@ -278,6 +281,19 @@ class DrawingApp:
         else:
             # Иначе устанавливаем цвет индикатора в текущий цвет кисти
             self.brush_color_indicator.itemconfig("indicator_brush", fill=self.pen_color, outline=self.pen_color)
+
+    def update_mode_label_color(self):
+        """
+        Обновляет цвет текста метки режима в соответствии с цветом кисти.
+        """
+        if self.eraser_mode:
+            # Если включен ластик, то цвет текста метки делаем черным
+            self.mode_label_fg = "black"
+        else:
+            # Иначе устанавливаем цвет текста метки в текущий цвет кисти
+            self.mode_label_fg = self.pen_color
+
+        self.mode_label.config(foreground=self.mode_label_fg)  # Обновляем цвет текста метки
 
 
 def main():
