@@ -1,14 +1,14 @@
 import tkinter as tk
-from tkinter import colorchooser, filedialog, messagebox
+from tkinter import colorchooser, filedialog, messagebox, simpledialog
 from PIL import Image, ImageDraw
 
 
 class DrawingApp:
     """
-    Приложение для рисования с возможностью сохранения в формате PNG.
+    Приложение для рисования с возможностью сохранения в формате PNG и изменения размера холста.
 
     Позволяет пользователю рисовать на холсте, выбирать цвет и размер кисти,
-    очищать холст, использовать ластик и сохранять рисунок в файл.
+    очищать холст, использовать ластик, сохранять рисунок в файл и изменять размер холста.
     Также добавлена пипетка для выбора цвета с холста.
 
     Атрибуты:
@@ -40,10 +40,10 @@ class DrawingApp:
         self.root = root
         self.root.title("Рисовалка с сохранением в PNG")
 
-        self.image = Image.new("RGB", (630, 400), "white")  # Создаем новое изображение PIL белого цвета
+        self.image = Image.new("RGB", (730, 450), "white")  # Создаем новое изображение PIL белого цвета
         self.draw = ImageDraw.Draw(self.image)  # Создаем объект ImageDraw для рисования на изображении
 
-        self.canvas = tk.Canvas(root, width=630, height=400, bg='white')  # Создаем холст Tkinter
+        self.canvas = tk.Canvas(root, width=730, height=450, bg='white')  # Создаем холст Tkinter
         self.canvas.pack()  # Размещаем холст в окне
 
         self.setup_ui()  # Настраиваем пользовательский интерфейс
@@ -79,6 +79,10 @@ class DrawingApp:
 
         save_button = tk.Button(control_frame, text="Сохранить", command=self.save_image)  # Создаем кнопку "Сохранить"
         save_button.pack(side=tk.LEFT, padx=5, pady=5)  # Размещаем кнопку слева с отступами
+
+        resize_button = tk.Button(control_frame, text="Изменить размер", command=self.resize_canvas)  # Кнопка изменения
+        # размера холста
+        resize_button.pack(side=tk.LEFT, padx=5, pady=5)  # Размещение кнопки
 
         # Рамка для кнопки "Ластик", индикатора и метки отображения режима
         # eraser_frame = tk.Frame(control_frame)
@@ -294,6 +298,22 @@ class DrawingApp:
             self.mode_label_fg = self.pen_color
 
         self.mode_label.config(foreground=self.mode_label_fg)  # Обновляем цвет текста метки
+
+    def resize_canvas(self):
+        """
+        Открывает диалоговое окно для ввода новых размеров холста и обновляет холст.
+        """
+        new_width = simpledialog.askinteger("Изменение размера", "Введите новую ширину холста:", minvalue=100,
+                                            maxvalue=2000)
+        new_height = simpledialog.askinteger("Изменение размера", "Введите новую высоту холста:", minvalue=100,
+                                             maxvalue=2000)
+
+        if new_width is not None and new_height is not None:
+            self.canvas.config(width=new_width, height=new_height)  # Обновляем размеры холста
+            self.image = Image.new("RGB", (new_width, new_height),
+                                   "white")  # Создаем новое изображение с новыми размерами
+            self.draw = ImageDraw.Draw(self.image)  # Создаем новый объект для рисования
+            self.canvas.delete("all")  # Очищаем холст
 
 
 def main():
